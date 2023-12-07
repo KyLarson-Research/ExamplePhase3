@@ -27,8 +27,8 @@ void genOutFileName(const char *infile, char *outfile){
 
 int main(int argv, char **argc){
   FILE * infile, * outfile;
-  char buf[MAX_LEN], inFileName[MAX_LEN][MAX_LEN], outFileName[MAX_LEN][MAX_LEN];
-  int i;
+  char buf[MAX_LEN], inFileName[MAX_LEN][MAX_LEN], outFileName[MAX_LEN][MAX_LEN], parsed_content[MAX_LEN] = "TODO: mod this with parsed content";
+  int i, line =1;
   if(argv < 2 ){
     printf("Error: Not enough input arguments.");
     return 0;
@@ -37,15 +37,22 @@ int main(int argv, char **argc){
   for(i=1; i<argv; i++){
      strcpy(inFileName[i-1], argc[i]);//use the last string in the command line argument at execution
      genOutFileName(inFileName[i-1], outFileName[i-1]);
-     printf("%s %s\n", inFileName[i-1], outFileName[i-1]);
+     
+     infile = fopen(inFileName[i-1], "r"); // -----file operations 
+     line = 1;
+     while(fgets(buf, MAX_LEN, infile) != NULL){
+        if(line==1){ printf("robot name:%s", buf); }
+        if(line==2){ printf("time x0 y0 theta0: %s", buf);}
+        if(line>2){ printf("move: %s", buf); }
+        line++;
+     }
+     
+     fclose(infile);
+     outfile = fopen(outFileName[i-1], "w");
+     
+     strcat(parsed_content, "   awesome!");
+     fprintf(outfile, "%s", buf);
+     fclose(outfile);
   }
-  /*
-  infile = fopen(inFileName, "r"); // -----file operations 
-  fgets(buf, MAX_LEN, infile);
-  fclose(infile);
-  outfile = fopen(outFileName, "w");
-  strcat(buf, "   awesome!");
-  fprintf(outfile, "%s", buf);
-  fclose(outfile);*/
   return 0;
 }
