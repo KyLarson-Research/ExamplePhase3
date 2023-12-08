@@ -85,6 +85,12 @@ void PrintRobot(char *name, double d, double x0, double y0, double xf, double yf
    return;
 }
 
+void FileRobotState(char *outFileName, RobotState p, double t_k){
+   FILE *outfile = fopen(outFileName, "a");
+   fprintf(outfile, "%.4lf: %.4lf, %.4lf, %.4lf\n", t_k, p.x, p.y, p.theta);
+   fclose(outfile);
+   return;
+}
 
 void genOutFileName(const char *infile, char *outfile);
 
@@ -98,7 +104,7 @@ int main(int argv, char **argc){
    
    FILE * infile, * outfile;
    char buf[MAX_LEN], inFileName[MAX_LEN][MAX_LEN], outFileName[MAX_LEN][MAX_LEN];
-   char parsed_content[MAX_LEN] = "TODO: mod this with parsed content";
+   
    int i, line =1;
    d[0]=0;
    
@@ -121,6 +127,7 @@ int main(int argv, char **argc){
             s[robotNum].theta = theta[robotNum];
             d[0] = 0;
             k=0;
+            FileRobotState(outFileName[robotNum], s[robotNum], k*T[robotNum]);
          }
          if(line>2){ sscanf(buf, "%s %s", buf1, buf2); 
             b1 = strtod(buf1, &end1);
@@ -133,34 +140,32 @@ int main(int argv, char **argc){
             u.w = w[k];
             p[robotNum] = s[robotNum];
             s[robotNum] = robot(T[robotNum], s[robotNum], u);
+            FileRobotState(outFileName[robotNum], s[robotNum], k*T[robotNum]);
             d[k] = d[k-1] + distance(p[robotNum], s[robotNum]);
          }
          line++;
          k++;
       }K[robotNum] = k-1;
-      distances[robotNum] = d[k-1];
+     distances[robotNum] = d[k-1];
      fclose(infile);
       
       
-      /*
-      outfile = fopen(outFileName[i-1], "w");
       
-      strcat(parsed_content, "   awesome!");
-      fprintf(outfile, "%s", buf);
-      fclose(outfile);*/
    }
-   //get distances and timestep for the last robot
-   	//distances[robotNum] = d[k-1];
-   	//K[robotNum]=k-1;
   
    //print all robots
    printf("Number of robots: %d\n", robotNum);
    for(i=0;i<robotNum; i++){
-      if(K[i]>10){PrintRobot(name[i], distances[i], y[i], x[i], s[i].x, s[i].y, T[i]*K[i]);}
+      if(K[i]>10){
+         PrintRobot(name[i], distances[i], y[i], x[i], s[i].x, s[i].y, T[i]*K[i]);
+      }
       else{
          PrintRobot(name[i], distances[i], x[i], y[i], s[i].x, s[i].y, T[i]*K[i]);
       }
    }
+   /* TODO CREATE THESE FUNCTIONS which give max dist between robots and min dist between robots
+   PrintMaxDistance(outFileName);
+   PrintMinDistance(outFileName);*/
    return 0;
   
    
