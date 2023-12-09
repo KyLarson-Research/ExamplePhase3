@@ -78,7 +78,6 @@ RobotState robot(double T, RobotState s, RobotControl ctrl){
 double sq(double x);
 
 double distance(RobotState s1, RobotState s2);
-
 void PrintRobot(char *name, double d, double x0, double y0, double xf, double yf, double t){
    printf("Robot %s has traveled %.4lf meters, starting at (%.4lf, %.4lf)", name, d, y0, x0);
    printf(" and ending at (%.4lf, %.4lf) at time %.4lf seconds.\n", xf, yf, t);
@@ -98,11 +97,11 @@ int main(int argv, char **argc){
    
    double T[5], x[5], y[5], theta[5], v[150], w[150], d[150], b1, b2, distances[5], K[5];
    int k=0, robotNum =0;
-   char name[5][30], buf1[10], buf2[30], *end1, *end2;
+   char name[5][30], buf1[10], buf2[30], *end1, *end2, pbuf1[MAX_LEN], pbuf2[MAX_LEN];
    RobotControl u;
    RobotState p[5], s[5];
    
-   FILE * infile, * outfile;
+   FILE * infile, * outfile, *temp;
    char buf[MAX_LEN], inFileName[MAX_LEN][MAX_LEN], outFileName[MAX_LEN][MAX_LEN];
    
    int i, line =1;
@@ -116,7 +115,7 @@ int main(int argv, char **argc){
       for(i=0; i<strlen(argc[robotNum+1]); i++){ inFileName[robotNum][i] =argc[robotNum+1][i];//strcpy
       }inFileName[robotNum][i] = '\0';// ---end strcpy
       genOutFileName(inFileName[robotNum], outFileName[robotNum]);
-     
+      temp = fopen(outFileName[robotNum],"w"); fclose(temp);
       infile = fopen(inFileName[robotNum], "r"); // -----file operations 
       line = 1;
       while(fgets(buf, MAX_LEN, infile) != NULL){
@@ -163,9 +162,50 @@ int main(int argv, char **argc){
          PrintRobot(name[i], distances[i], x[i], y[i], s[i].x, s[i].y, T[i]*K[i]);
       }
    }
-   /* TODO CREATE THESE FUNCTIONS which give max dist between robots and min dist between robots
-   PrintMaxDistance(outFileName);
-   PrintMinDistance(outFileName);*/
+   
+   //Make sure the time steps are the same
+   for(i=0; i<robotNum; i++){
+      if(T[0]!=T[i]){ printf("Error: Sampling time must match.");break; }
+   }
+   // TODO CREATE THESE FUNCTIONS which give max dist between robots and min dist between robots
+   FILE *FILE1 = fopen(outFileName[0], "r");
+   FILE *FILE2 = fopen(outFileName[1], "r");
+   double x1, y1, x2, y2, t81, t82, t1, t2;
+   char * comma;
+   double max,tmax, min, tmin;
+   int j=0;
+   while(fgets(pbuf1, MAX_LEN, FILE1)!=NULL && fgets(pbuf2, MAX_LEN, FILE2)!=NULL){
+      
+      pbuf1[7] = '\0'; (pbuf1[8]=='-')? (pbuf1[15] = '\0') : (pbuf1[14] = '\0'); pbuf1[24] = '\0';
+      comma = strchr(&pbuf1[17], ','); if(comma != NULL){ *comma = '\0';}
+      sscanf(&pbuf1[16], "%lf", &y1);
+      sscanf(pbuf1, "%lf", &t1);
+      
+      sscanf(&pbuf1[8], "%lf", &x1);
+      pbuf2[7] = '\0'; (pbuf2[8]=='-')? (pbuf2[15] = '\0') : (pbuf2[14] = '\0'); pbuf2[24] = '\0';
+      comma = strchr(&pbuf2[17], ','); if(comma != NULL){ *comma = '\0'; }
+      sscanf(&pbuf2[16], "%lf", &y2);
+      sscanf(pbuf2, "%lf", &t2);
+      
+      sscanf(&pbuf2[8], "%lf", &x2);
+      //printf("%lf: %lf %lf \n",t1, x1, y1);
+      //printf("%lf: %lf %lf \n", t2, x2, y2);
+      if(j==0){
+         max = sqrt(sq(x1 - x2)+sq(y1 - y2));
+         min = max;
+         tmax =0;
+         tmin =0;}
+      else{
+         if(sqrt(sq(x1 - x2)+sq(y1 - y2)) - max >0.001){ max = sqrt(sq(x1 - x2)+sq(y1 - y2));tmax = t1;}
+         if(sqrt(sq(x1 - x2)+sq(y1 - y2)) - min <0.001){ min = sqrt(sq(x1 - x2)+sq(y1 - y2));tmin = t2;}
+      }j++;
+      
+   }
+   fclose(FILE1);
+   fclose(FILE2);
+   //printf("max %lf @ %lf min %lf @ %lf\n", max,tmax, min,tmin);
+   printf("Max distance is %.4lf meters at time %.4lf seconds.\n",max,tmax);
+   printf("Min distance is %.4lf meters at time %.4lf seconds.\n",min,tmin);
    return 0;
   
    
